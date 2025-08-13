@@ -1,4 +1,6 @@
+--- ARQUIVO CORRIGIDO: vercel.json ---
 {
+  "version": 2,
   "builds": [
     {
       "src": "etl_backend.py",
@@ -8,7 +10,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "etl_backend.py"
+      "dest": "/etl_backend.py"
     }
   ]
 }
