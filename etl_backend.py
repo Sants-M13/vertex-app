@@ -1,4 +1,3 @@
---- ARQUIVO CORRIGIDO: etl_backend.py ---
 """
 Aplicativo Flask para ETL de dados de varejo
 Prepara dados transacionais para treinamento de modelos de séries temporais no Vertex AI
