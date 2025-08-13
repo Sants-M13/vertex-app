@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ferramenta de Preparação de Dados para Vertex AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            padding: 40px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 35px;
+            font-size: 14px;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .file-input-wrapper {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        .optional {
+            color: #95a5a6;
+            font-weight: normal;
+        }
+
+        .file-input-container {
+            position: relative;
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f8f9fa;
+        }
+
+        .file-input-container:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .file-input-container.has-file {
+            border-color: #48bb78;
+            background: #f0fdf4;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .file-text {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .file-name {
+            color: #2d3748;
+            font-weight: 600;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .process-button {
+            width: 100%;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .process-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .process-button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .process-button.processing {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .status-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f7fafc;
+            min-height: 80px;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .status-section.show {
+            display: block;
+        }
+
+        .status-section.success {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+        }
+
+        .status-section.error {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+        }
+
+        .status-section.processing {
+            background: #fefce8;
+            border: 1px solid #fde047;
+        }
+
+        .status-message {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .download-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .download-link:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .spinner:after {
+            content: " ";
+            display: block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid #667eea;
+            border-color: #667eea transparent #667eea transparent;
+            animation: spin 1.2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .tech-info {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            color: #718096;
+            font-size: 12px;
+        }
+
+        .tech-info span {
+            color: #667eea;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Ferramenta de Preparação de Dados para Vertex AI</h1>
+        <p class="subtitle">Transforme dados transacionais em séries temporais otimizadas para ML</p>
+
+        <div class="upload-section">
+            <div class="file-input-wrapper">
+                <label for="sales-file">
+                    📊 1. Relatório de Vendas 
+                    <span class="required">*</span>
+                    <span class="optional">(obrigatório)</span>
+                </label>
+                <div class="file-input-container" id="sales-container">
+                    <input type="file" id="sales-file" accept=".csv" />
+                    <div class="file-icon">📁</div>
+                    <div class="file-text">Clique ou arraste o arquivo CSV aqui</div>
+                    <div class="file-name" id="sales-filename"></div>
+                </div>
+            </div>
+
+            <div class="file-input-wrapper">
+                <label for="inventory-file">
+                    📦 2. Relatório de Inventário Diário 
+                    <span class="optional">(opcional)</span>
+                </label>
+                <div class="file-input-container" id="inventory-container">
+                    <input type="file" id="inventory-file" accept=".csv" />
+                    <div class="file-icon">📁</div>
+                    <div class="file-text">Clique ou arraste o arquivo CSV aqui</div>
+                    <div class="file-name" id="inventory-filename"></div>
+                </div>
+            </div>
+        </div>
+
+        <button id="process-button" class="process-button" disabled>
+            Processar e Gerar Arquivo
+        </button>
+
+        <div id="status-section" class="status-section">
+            <div id="status-message" class="status-message"></div>
+            <div id="download-container"></div>
+        </div>
+
+        <div class="tech-info">
+            Powered by <span>Flask</span> + <span>Pandas</span> | ETL Pipeline v1.0
+        </div>
+    </div>
+
+    <script>
+        // Elementos do DOM
+        const salesFile = document.getElementById('sales-file');
+        const inventoryFile = document.getElementById('inventory-file');
+        const salesContainer = document.getElementById('sales-container');
+        const inventoryContainer = document.getElementById('inventory-container');
+        const salesFilename = document.getElementById('sales-filename');
+        const inventoryFilename = document.getElementById('inventory-filename');
+        const processButton = document.getElementById('process-button');
+        const statusSection = document.getElementById('status-section');
+        const statusMessage = document.getElementById('status-message');
+        const downloadContainer = document.getElementById('download-container');
+
+        // Variáveis para armazenar os arquivos
+        let salesFileData = null;
+        let inventoryFileData = null;
+
+        // Event listeners para os inputs de arquivo
+        salesFile.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                salesFileData = e.target.files[0];
+                salesFilename.textContent = `✅ ${salesFileData.name}`;
+                salesContainer.classList.add('has-file');
+                processButton.disabled = false;
+            } else {
+                salesFileData = null;
+                salesFilename.textContent = '';
+                salesContainer.classList.remove('has-file');
+                processButton.disabled = true;
+            }
+        });
+
+        inventoryFile.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                inventoryFileData = e.target.files[0];
+                inventoryFilename.textContent = `✅ ${inventoryFileData.name}`;
+                inventoryContainer.classList.add('has-file');
+            } else {
+                inventoryFileData = null;
+                inventoryFilename.textContent = '';
+                inventoryContainer.classList.remove('has-file');
+            }
+        });
+
+        // Função para processar os arquivos
+        processButton.addEventListener('click', async function() {
+            if (!salesFileData) {
+                showStatus('Por favor, selecione um arquivo de vendas.', 'error');
+                return;
+            }
+
+            // Preparar o FormData
+            const formData = new FormData();
+            formData.append('sales_file', salesFileData);
+            
+            if (inventoryFileData) {
+                formData.append('inventory_file', inventoryFileData);
+            }
+
+            // Desabilitar botão e mostrar status de processamento
+            processButton.disabled = true;
+            processButton.classList.add('processing');
+            processButton.innerHTML = '<span class="spinner"></span>Processando...';
+            showStatus('Processando arquivos... Isso pode levar alguns segundos.', 'processing');
+
+            try {
+                // Fazer a requisição para o backend
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    // Receber o arquivo processado
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    
+                    // Criar link de download
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = url;
+                    downloadLink.download = 'vertex_training_data.csv';
+                    downloadLink.className = 'download-link';
+                    downloadLink.textContent = '⬇️ Baixar Planilha para Treinamento (vertex_training_data.csv)';
+                    
+                    // Mostrar sucesso e link de download
+                    showStatus('✅ Processamento concluído com sucesso!', 'success');
+                    downloadContainer.innerHTML = '';
+                    downloadContainer.appendChild(downloadLink);
+                    
+                    // Trigger automático do download
+                    downloadLink.click();
+                } else {
+                    // Erro retornado pelo servidor
+                    const error = await response.json();
+                    showStatus(`❌ Erro: ${error.error || 'Erro desconhecido durante o processamento.'}`, 'error');
+                }
+            } catch (error) {
+                // Erro de rede ou outro erro
+                showStatus(`❌ Erro de conexão: ${error.message}`, 'error');
+            } finally {
+                // Restaurar botão
+                processButton.disabled = false;
+                processButton.classList.remove('processing');
+                processButton.innerHTML = 'Processar e Gerar Arquivo';
+                
+                // Reabilitar apenas se ainda houver arquivo de vendas
+                if (!salesFileData) {
+                    processButton.disabled = true;
+                }
+            }
+        });
+
+        // Função para mostrar status
+        function showStatus(message, type) {
+            statusSection.className = `status-section show ${type}`;
+            statusMessage.textContent = message;
+            
+            if (type !== 'success') {
+                downloadContainer.innerHTML = '';
+            }
+        }
+
+        // Adicionar funcionalidade de drag and drop
+        function setupDragAndDrop(container, fileInput) {
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                container.style.borderColor = '#667eea';
+                container.style.background = '#f0f4ff';
+            });
+
+            container.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                if (!container.classList.contains('has-file')) {
+                    container.style.borderColor = '#cbd5e0';
+                    container.style.background = '#f8f9fa';
+                }
+            });
+
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                
+                if (!container.classList.contains('has-file')) {
+                    container.style.borderColor = '#cbd5e0';
+                    container.style.background = '#f8f9fa';
+                }
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0 && files[0].name.endsWith('.csv')) {
+                    fileInput.files = files;
+                    const event = new Event('change', { bubbles: true });
+                    fileInput.dispatchEvent(event);
+                } else {
+                    showStatus('Por favor, selecione apenas arquivos CSV.', 'error');
+                }
+            });
+        }
+
+        // Configurar drag and drop para ambos os containers
+        setupDragAndDrop(salesContainer, salesFile);
+        setupDragAndDrop(inventoryContainer, inventoryFile);
+    </script>
+</body>
+</html>
